@@ -20,6 +20,10 @@ public class UIManager : MonoBehaviour
 
     public void ShowPlayerXPUI(int xp)
     {
+        if (xp == 0)
+        {
+            playerXPUI.GetComponentInChildren<UnityEngine.UI.Text>().text = "+0XP";
+        }
         StartCoroutine(PlayerXPUI(xp));
     }
 
@@ -34,12 +38,14 @@ public class UIManager : MonoBehaviour
     {
         int xpDisplay = 0;
         playerXPUI.SetActive(true);
+        
         while (xpDisplay < xp)
         {
             xpDisplay++;
             playerXPUI.GetComponentInChildren<UnityEngine.UI.Text>().text = "+" + xpDisplay.ToString() + "XP";
             yield return null;
         }
+        
         yield return new WaitForSeconds(1f);
         playerXPUI.SetActive(false);
     }

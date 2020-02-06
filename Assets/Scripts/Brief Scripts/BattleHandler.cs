@@ -32,18 +32,27 @@ public class BattleHandler:MonoBehaviour
             Debug.LogWarning("Player or NPC battle points is 0, most likely the logic has not be setup for this yet");
         }
 
-        // we probably want to change this battle outcome amount
-        // as right now we are always getting a 100% experience points.
-        // it would be great if we could create some sort of percentage
-        currentBattleOutcome = 1;
-
-        // we probably want to do some sort of check here to see if the player has won...rather than assigning xp everytime.
-        // if so set points.
-        player.CalculateXP(currentBattleOutcome); 
-        // If we wanted to we could also work out if the npc has won or if there is a draw!
+        // Set the outcome to the ratio of playerpoints to npcpoints
+        currentBattleOutcome = currentPlayerPoints / (float)currentNpcPoints;
+        Debug.Log("Battle outcome: " + currentBattleOutcome + "(" + currentPlayerPoints + " / " + currentNpcPoints + ")");
+        if (currentBattleOutcome > 1f) // Did the player win?
+        {
+            // Earn more xp the harder the fight is and less the easier it is
+            player.CalculateXP(currentNpcPoints / (float)currentPlayerPoints); 
+        }
+        else if (currentBattleOutcome < 1f) // Did the NPC win?
+        {
+            npc.CalculateXP(currentBattleOutcome);
+        }
+        else 
+        {
+            // Give both half of the xp they would've gained if they won
+            player.CalculateXP(currentNpcPoints / (float)currentPlayerPoints); 
+            npc.CalculateXP(.5f * (currentBattleOutcome));
+        }
 
         // send the information of what happened in the fight to the OnBattleConcluded Function to show proper animations and effects,
-        OnBattleConcluded(player, npc, currentBattleOutcome);      
+        OnBattleConcluded(player, npc, currentBattleOutcome);  
     }
 
 

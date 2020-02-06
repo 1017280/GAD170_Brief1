@@ -48,6 +48,14 @@ public class Stats : MonoBehaviour
     public ParticleHandler particleHandler; // a refernce to our particle system that is played when we level up.
    
     public UIManager uIManager; // a reference to the UI Manager in our scene.
+
+    [SerializeField]
+    [Tooltip("The base amount of xp gained from doing battles")]
+    private float xpGain = 10;
+    [SerializeField]
+    [Tooltip("The ratio of which the xp threshold for levelling up is increased with each level up")]
+    private float xpThresholdIncreaseRate = 0.5f;
+
     /// <summary>
     /// Called on the very first frame of the game
     /// </summary>
@@ -68,6 +76,11 @@ public class Stats : MonoBehaviour
         Debug.LogWarning("Initial stats has been called");
         // We probably want to set out default level and some default random stats 
         // for our luck, style and rythmn.
+
+        level = 1;
+        style = 1;
+        luck = 1;
+        rhythm = 1;
     }
 
     /// <summary>
@@ -77,13 +90,23 @@ public class Stats : MonoBehaviour
     /// </summary>
     public void CalculateXP(float BattleOutcome)
     {
-        Debug.LogWarning("This character needs some xp to be given, the outcome of the fight was: " + BattleOutcome);
         // The result of the battle is coming in which is stored in BattleOutcome .... we probably want to do something with it to calculate XP.
+        int xpIncrease = Mathf.RoundToInt(BattleOutcome * xpGain);
+        currentXp += xpIncrease;
 
-        //Called when we want to display how much xp we won, by default it is 0
-        uIManager.ShowPlayerXPUI(0);
+        if (GetComponent<Player>())
+        {
+            //Called when we want to display how much xp we won, by default it is 0
+            uIManager.ShowPlayerXPUI(xpIncrease);
+        }
 
         // We probably also want to check to see if the player can level up and if so do something....
+
+        while (currentXp >= xpThreshold) 
+        {
+            this.LevelUp();
+        }
+        Debug.Log(gameObject.name + " gained " + xpIncrease + "xp, progress: " + currentXp + "/" + xpThreshold);
     }
 
     /// <summary>
@@ -91,16 +114,25 @@ public class Stats : MonoBehaviour
     /// </summary>
     private void LevelUp()
     {
+        // Increase the player level, subtract the threshold value from xp and 
+        // increase the threshold for the next level
+        level++;
+        currentXp -= xpThreshold;
+        xpThreshold = Mathf.RoundToInt((xpThreshold * (1+xpThresholdIncreaseRate)));
 
-        //We probably want to increase the player level, the xp threshold and increase our current skill points based on our level.
+        Debug.Log(gameObject.name + " Leveled up to " + level + ", new threshhold: " + xpThreshold + ", currentXp: " + currentXp);
 
-        Debug.LogWarning("Level up has been called");
-        // plays the level up sound effect.
-        sfxHandler.LevelUp(); 
-        // emits a particle effect to show we have levelled up
-        particleHandler.Emit();
-        // Displays a UI Message to the player we have levelled up
-        uIManager.ShowLevelUI();
+        if (GetComponent<Player>())
+        {
+            // plays the level up sound effect.
+            sfxHandler.LevelUp(); 
+            // emits a particle effect to show we have levelled up
+            particleHandler.Emit();
+            // Displays a UI Message to the player we have levelled up
+            uIManager.ShowLevelUI();
+        }
+
+        AssignSkillPointsOnLevelUp(3);
     }
     
     /// <summary>
@@ -108,10 +140,17 @@ public class Stats : MonoBehaviour
     /// </summary>
     public void AssignSkillPointsOnLevelUp(int PointsToAssign)
     {
-        Debug.LogWarning("AssignSkillPointsOnLevelUp has been called " + PointsToAssign);
-
-        // We are taking an amount of points to assign in, and we want to assign it to our luck, style and rhythm, we 
-        // want some random amount of points added to our current values.
+        Debug.Log("Assigning new skillpoints");
+        Debug.Log("Current skillpoints: style=" + style + ", luck=" + luck + ", rhythm=" + rhythm);
+        for (int i = 0; i < PointsToAssign; i++)
+        {
+            // Generate a random number symbolising the skill and increment the 'selected' skill by 1
+            int r = Random.Range(1, 4);
+            style   += r == 1 ? 1 : 0;
+            luck    += r == 2 ? 1 : 0;
+            rhythm  += r == 3 ? 1 : 0;
+        }
+        Debug.Log("    New skillpoints: style=" + style + ", luck=" + luck + ", rhythm=" + rhythm);
     }
 
     /// <summary>
@@ -120,11 +159,9 @@ public class Stats : MonoBehaviour
     /// <returns></returns>
     public int ReturnBattlePoints()
     {
-        // We want to design some algorithm that will generate a number of points based off of our luck,style and rythm, we probably want to add some randomness in our calculation too
-        // to ensure that there is not always a draw, by default it just returns 0. 
-        // If you right click this function and find all references you can see where it is called.
-        Debug.LogWarning("ReturnBattlePoints has been called we probably want to create some battle points based on our stats");
-        return 0;
+        // Add all skills into one value and multiply by a random decimal value between 0.5 and 1.5 for a slight variation
+        float r = Random.Range(.5f, 1.5f);
+        return Mathf.RoundToInt(((float)(style + rhythm + luck) * r));
     }
 
 }
